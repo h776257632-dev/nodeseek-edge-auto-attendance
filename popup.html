@@ -2,39 +2,55 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>NodeSeek 自动签到</title>
+  <title>NodeSeek 助手</title>
   <style>
     body {
-      width: 370px;
+      width: 430px;
       margin: 0;
-      padding: 14px;
+      padding: 12px;
       font-family: "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #222;
-      background: #fafafa;
+      background: #f6f8fa;
     }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 18px;
+    h1 { margin: 0 0 10px; font-size: 18px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .tab-btn {
+      border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer;
+      background: #eaeef2; color: #222;
     }
+    .tab-btn.active { background: #1f6feb; color: #fff; }
     .card {
       background: #fff;
-      border: 1px solid #e6e6e6;
+      border: 1px solid #d0d7de;
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 10px;
     }
+    .tab { display: none; }
+    .tab.active { display: block; }
     label {
       display: flex;
       align-items: center;
       gap: 8px;
       margin: 8px 0;
-      font-size: 14px;
+      font-size: 13px;
     }
-    input[type="number"] {
-      width: 58px;
+    input[type="number"], input[type="time"] {
+      width: 82px;
       padding: 5px;
       border: 1px solid #ccc;
       border-radius: 6px;
+    }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      min-height: 118px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 13px;
     }
     button {
       border: 0;
@@ -43,29 +59,13 @@
       cursor: pointer;
       background: #1f6feb;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
     }
-    button.secondary {
-      background: #666;
-    }
-    button.danger {
-      background: #b42318;
-    }
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .small {
-      color: #666;
-      font-size: 12px;
-      line-height: 1.5;
-    }
+    button.secondary { background: #666; }
+    button.danger { background: #b42318; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .small { color: #666; font-size: 12px; line-height: 1.5; }
     pre {
       white-space: pre-wrap;
       word-break: break-word;
@@ -74,7 +74,7 @@
       background: #f5f5f5;
       border-radius: 8px;
       padding: 8px;
-      max-height: 180px;
+      max-height: 230px;
       overflow: auto;
     }
     .ok { color: #0a7a25; }
@@ -89,52 +89,87 @@
   </style>
 </head>
 <body>
-  <h1>NodeSeek 自动签到 v1.1</h1>
+  <h1>NodeSeek 助手 v1.2</h1>
 
-  <div class="card">
-    <label>
-      <input id="enabled" type="checkbox">
-      启用自动签到
-    </label>
-    <label>
-      <input id="autoWhenVisit" type="checkbox">
-      访问 NodeSeek 页面时自动尝试一次
-    </label>
-    <label>
-      <input id="openTabOnAlarm" type="checkbox">
-      每日定时到点自动打开 NodeSeek 页面签到
-    </label>
-    <label>
-      <input id="notify" type="checkbox">
-      开启浏览器通知
-    </label>
-
-    <div class="row">
-      <span>每日定时：</span>
-      <input id="hour" type="number" min="0" max="23">
-      <span>时</span>
-      <input id="minute" type="number" min="0" max="59">
-      <span>分</span>
-    </div>
-
-    <p id="nextAlarm" class="small"></p>
-
-    <div class="row">
-      <button id="saveBtn">保存设置</button>
-      <button id="signBtn" class="secondary">立即签到</button>
-      <button id="forceBtn" class="secondary">强制重试</button>
-      <button id="resetBtn" class="danger">清除今日记录</button>
-    </div>
-
-    <div class="tip small">
-      v1.1 不再由扩展后台直接请求接口，而是在 NodeSeek 页面上下文里执行 fetch。请先在 Edge 里正常登录 NodeSeek。
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="attendance">签到</button>
+    <button class="tab-btn" data-tab="comment">评论草稿</button>
+    <button class="tab-btn" data-tab="logs">状态/日志</button>
   </div>
 
-  <div class="card">
-    <div id="status" class="small">正在读取状态...</div>
-    <pre id="result"></pre>
-  </div>
+  <section id="tab-attendance" class="tab active">
+    <div class="card">
+      <label><input id="attEnabled" type="checkbox"> 启用自动签到</label>
+      <label><input id="attAutoVisit" type="checkbox"> 访问 NodeSeek 时自动尝试签到</label>
+      <label><input id="attOpenTab" type="checkbox"> 定时到点打开 NodeSeek 页面签到</label>
+      <label><input id="notify" type="checkbox"> 开启浏览器通知</label>
+
+      <div class="row">
+        <span>每日签到时间：</span>
+        <input id="attHour" type="number" min="0" max="23"> 时
+        <input id="attMinute" type="number" min="0" max="59"> 分
+      </div>
+
+      <p id="nextAlarm" class="small"></p>
+
+      <div class="row">
+        <button id="saveAttBtn">保存签到设置</button>
+        <button id="signBtn" class="secondary">立即签到</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-comment" class="tab">
+    <div class="card">
+      <label><input id="comEnabled" type="checkbox"> 启用评论草稿助手</label>
+      <label><input id="comAutoFill" type="checkbox"> 打开帖子后自动生成并填入草稿</label>
+
+      <div class="row">
+        <span>每天最多生成草稿：</span>
+        <input id="dailyDraftLimit" type="number" min="0" max="99"> 条
+      </div>
+
+      <div class="row">
+        <span>每天最多确认发送：</span>
+        <input id="dailySendLimit" type="number" min="0" max="99"> 条
+      </div>
+
+      <div class="row">
+        <span>允许发送时间：</span>
+        <input id="startTime" type="time">
+        <span>到</span>
+        <input id="endTime" type="time">
+      </div>
+
+      <div class="row">
+        <span>遇到风险暂停：</span>
+        <input id="pauseHours" type="number" min="1" max="168"> 小时
+      </div>
+
+      <p class="small">随机评论池：一行一条。打开帖子页后会随机选一句生成草稿；真正发送前仍需你点“确认发送”。</p>
+      <textarea id="commentPool"></textarea>
+
+      <div class="row">
+        <button id="saveComBtn">保存评论设置</button>
+        <button id="clearPauseBtn" class="secondary">解除暂停</button>
+      </div>
+
+      <div class="tip small">
+        当前版本不会自动批量发评论。它只会生成/填入草稿，发送必须由你在帖子页面点击“确认发送”。
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-logs" class="tab">
+    <div class="card">
+      <div id="status" class="small">正在读取状态...</div>
+      <div class="row" style="margin-top:8px;">
+        <button id="resetTodayBtn" class="danger">清除今日本地记录</button>
+        <button id="clearLogsBtn" class="secondary">清空日志</button>
+      </div>
+      <pre id="result"></pre>
+    </div>
+  </section>
 
   <script src="popup.js"></script>
 </body>

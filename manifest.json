@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "NodeSeek 自动签到",
-  "version": "1.1.0",
-  "description": "每天在 NodeSeek 已登录页面上下文中自动签到，降低后台请求被判高风险的概率。",
+  "name": "NodeSeek 助手：签到 + 评论草稿",
+  "version": "1.2.0",
+  "description": "NodeSeek 自动签到，并在帖子页面生成随机评论草稿；评论发送需要手动确认。",
   "permissions": [
     "alarms",
     "storage",
@@ -17,7 +17,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "NodeSeek 自动签到",
+    "default_title": "NodeSeek 助手",
     "default_popup": "popup.html"
   },
   "icons": {
