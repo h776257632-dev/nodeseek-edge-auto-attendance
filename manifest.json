@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "NodeSeek 自动签到",
+  "version": "1.1.0",
+  "description": "每天在 NodeSeek 已登录页面上下文中自动签到，降低后台请求被判高风险的概率。",
+  "permissions": [
+    "alarms",
+    "storage",
+    "notifications",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.nodeseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "NodeSeek 自动签到",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.nodeseek.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
